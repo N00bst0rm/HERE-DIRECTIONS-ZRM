@@ -37,6 +37,21 @@
             box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
             user-select: none;
         }
+        /* Toggle button styling */
+        #toggle-view-btn {
+            position: absolute;
+            top: 70px;
+            left: 10px;
+            z-index: 1100;
+            background: rgba(255, 255, 255, 0.8);;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0px 0px 5px rgba(0,0,0,0.3);
+            user-select: none;
+        }
     </style>
     <!-- HERE API and support scripts -->
     <script type="text/javascript" src='../test-credentials.js'></script>
@@ -52,6 +67,7 @@
 <body id="markers-on-the-map">
     <!-- Info box and map container -->
     <div id="info-box">Loading...</div>
+    <button id="toggle-view-btn">Satellite View</button>
     <div id="map"></div>
     <script type="text/javascript">
 
@@ -75,11 +91,25 @@
         }
     );
 
+    // Track current layer type
+    let currentLayerType = 'normal';
+
     // Enable vehicle restriction features on the map after a short delay
+    function enableVehicleRestrictions(enable) {
+        const provider = map.getBaseLayer().getProvider();
+        if (provider && provider.getStyle) {
+            if (enable) {
+                provider.getStyle().setEnabledFeatures([
+                    { feature: "vehicle restrictions", mode: "active & inactive" },
+                ]);
+            } else {
+                provider.getStyle().setEnabledFeatures([]);
+            }
+        }
+    }
+
     setTimeout(() => {
-        map.getBaseLayer().getProvider().getStyle().setEnabledFeatures([
-            { feature: "vehicle restrictions", mode: "active & inactive" },
-        ]);
+        enableVehicleRestrictions(true);
     }, 500);
 
     // Enable map interaction (drag, zoom, etc.)
@@ -219,7 +249,7 @@
             routePolyline.setGeometry(multiLineString);
         } else {
             routePolyline = new H.map.Polyline(multiLineString, {
-                style: { strokeColor: 'rgb(0, 130, 130)', lineWidth: 5 }
+                style: { strokeColor: 'rgb(0, 10, 130)', lineWidth: 5 }
             });
             map.addObject(routePolyline);
         }
@@ -294,6 +324,24 @@
                 updateWaypointMarkers();
                 updateRoute();
             }
+        }
+    });
+
+    // Toggle between normal and satellite view
+    document.getElementById('toggle-view-btn').addEventListener('click', function() {
+        if (currentLayerType === 'normal') {
+            // Switch to satellite
+            map.setBaseLayer(defaultLayers.raster.satellite.map);
+            enableVehicleRestrictions(false);
+            this.innerText = 'Normal View';
+            currentLayerType = 'satellite';
+        } else {
+            // Switch to normal
+            map.setBaseLayer(defaultLayers.vector.normal.logistics);
+            // Wait a bit for the new layer to be ready before enabling restrictions
+            setTimeout(() => enableVehicleRestrictions(true), 500);
+            this.innerText = 'Satellite View';
+            currentLayerType = 'normal';
         }
     });
 
