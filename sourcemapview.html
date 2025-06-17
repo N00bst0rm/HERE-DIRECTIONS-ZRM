@@ -20,6 +20,22 @@
       width: 100%;
       height: 250px;
     }
+
+    /* Toggle button styling */
+    #toggle-view-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1100;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+      user-select: none;
+    }
   </style>
   <script src="../test-credentials.js"></script>
   <script src="https://js.api.here.com/v3/3.1/mapsjs-core.js"></script>
@@ -34,6 +50,7 @@
 </head>
 
 <body id="markers-on-the-map">
+  <button id="toggle-view-btn">Satellite View</button>
   <div id="map"></div>
   <script>
     // Add polyline to the map
@@ -87,17 +104,28 @@
       }
     );
 
+    // Track current layer type
+    let currentLayerType = 'normal';
+
     // Enable vehicle restrictions styling after map is ready
+    function enableVehicleRestrictions(enable) {
+      const provider = map.getBaseLayer().getProvider();
+      if (provider && provider.getStyle) {
+        if (enable) {
+          provider.getStyle().setEnabledFeatures([
+            {
+              feature: "vehicle restrictions",
+              mode: "active & inactive"
+            }
+          ]);
+        } else {
+          provider.getStyle().setEnabledFeatures([]);
+        }
+      }
+    }
+
     setTimeout(() => {
-      map.getBaseLayer()
-        .getProvider()
-        .getStyle()
-        .setEnabledFeatures([
-          {
-            feature: "vehicle restrictions",
-            mode: "active & inactive"
-          }
-        ]);
+      enableVehicleRestrictions(true);
     }, 500);
 
     // Add start and end markers
@@ -117,6 +145,23 @@
 
     // Draw polyline
     addPolylineToMap(map);
+
+    // Toggle between normal and satellite view
+    document.getElementById('toggle-view-btn').addEventListener('click', function () {
+      if (currentLayerType === 'normal') {
+        // Switch to satellite
+        map.setBaseLayer(defaultLayers.raster.satellite.map);
+        enableVehicleRestrictions(false);
+        this.innerText = 'Normal View';
+        currentLayerType = 'satellite';
+      } else {
+        // Switch to normal
+        map.setBaseLayer(defaultLayers.vector.normal.logistics);
+        setTimeout(() => enableVehicleRestrictions(true), 500);
+        this.innerText = 'Satellite View';
+        currentLayerType = 'normal';
+      }
+    });
   </script>
 </body>
 
