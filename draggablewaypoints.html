@@ -331,13 +331,16 @@
     document.getElementById('toggle-view-btn').addEventListener('click', function() {
         if (currentLayerType === 'normal') {
             // Switch to satellite
-            map.setBaseLayer(defaultLayers.raster.satellite.map);
-            enableVehicleRestrictions(false);
+            map.setBaseLayer(defaultLayers.hybrid.liteday.raster);
+            map.addLayer(defaultLayers.hybrid.liteday.vector);
+            setTimeout(() => enableVehicleRestrictions(true), 500);
             this.innerText = 'Normal View';
             currentLayerType = 'satellite';
         } else {
             // Switch to normal
             map.setBaseLayer(defaultLayers.vector.normal.logistics);
+            // Remove the satellite vector overlay
+            map.removeLayer(defaultLayers.hybrid.liteday.vector);
             // Wait a bit for the new layer to be ready before enabling restrictions
             setTimeout(() => enableVehicleRestrictions(true), 500);
             this.innerText = 'Satellite View';
